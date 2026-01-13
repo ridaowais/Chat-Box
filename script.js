@@ -1,5 +1,6 @@
 let gameMode = null; // null | "menu" | "rps" | "ttt"
 let tttBoard = Array(9).fill(null);
+let tttScores = { user: 0, bot: 0 }; // Track wins for Tic Tac Toe
 
 const form = document.getElementById("form");
 const input = document.getElementById("input");
@@ -122,8 +123,33 @@ function showTicTacToe() {
   }
   
   function endTicTacToe(message) {
+    // Update scores
+    if (message.includes("You win")) tttScores.user++;
+    else if (message.includes("Bot wins")) tttScores.bot++;
+  
     gameMode = null;
-    addMessage("Bot", message + " Type 'tic tac toe' to play again.", "left");
+    addMessage(
+      "Bot",
+      `${message} <br>Score: You ${tttScores.user} - Bot ${tttScores.bot}`,
+      "left"
+    );
+  
+    // Show reset button
+    const resetBtnHTML = `
+      <button class="game-btn" onclick="resetTTT()">🔄 Restart Tic Tac Toe</button>
+    `;
+    addCustomMessage("Bot", resetBtnHTML);
+  }
+
+  function resetTTT() {
+    tttBoard = Array(9).fill(null);
+    gameMode = "ttt";
+    showTicTacToe(); // Show empty board
+    addMessage(
+      "Bot",
+      `Tic Tac Toe restarted! <br>Score: You ${tttScores.user} - Bot ${tttScores.bot}`,
+      "left"
+    );
   }
 
   function addCustomMessage(name, html) {
@@ -141,6 +167,17 @@ function showTicTacToe() {
     chat.scrollTop = chat.scrollHeight;
   }
 
+  // Show a menu with clickable game buttons
+function showGameButtons() {
+    gameMode = "menu";
+    const menuHTML = `
+      🎮 <b>Choose a game:</b><br><br>
+      <button class="game-btn" onclick="startTTT()">❌⭕ Tic Tac Toe</button>
+      <button class="game-btn" onclick="startRPS()">✊📄✂️ Rock Paper Scissors</button>
+    `;
+    addCustomMessage("Bot", menuHTML);
+  }
+
   function startTTT() {
     gameMode = "ttt";
     tttBoard = Array(9).fill(null);
@@ -148,12 +185,35 @@ function showTicTacToe() {
   }
   
   function startRPS() {
-    gameMode = "rps";
+    startRPSButtons();
+  }
+
+  function playRPS(userChoice) {
+    const choices = ["rock", "paper", "scissors"];
+    const botChoice = choices[Math.floor(Math.random() * 3)];
+    let result = "";
+  
+    if (userChoice === botChoice) result = "It's a tie 😐";
+    else if (
+      (userChoice === "rock" && botChoice === "scissors") ||
+      (userChoice === "paper" && botChoice === "rock") ||
+      (userChoice === "scissors" && botChoice === "paper")
+    ) {
+      result = "You win 🎉";
+      rpsScores.user++;
+    } else {
+      result = "I win 😄";
+      rpsScores.bot++;
+    }
+  
     addMessage(
       "Bot",
-      "Rock Paper Scissors 🎮<br>Type: rock ✊, paper 📄, or scissors ✂️",
+      `You chose <b>${userChoice}</b><br>I chose <b>${botChoice}</b><br>${result}`,
       "left"
     );
+  
+    // Show buttons again for next round
+    startRPSButtons();
   }
 
 function botReply(userText) {
@@ -164,13 +224,10 @@ function botReply(userText) {
     let reply = "";
 
 // Play a game
-if (
-    text.includes("play a game") ||
-    text.includes("game")
-  ) {
-    showGameMenu();
+if (text.includes("play a game") || text.includes("game")) {
+    showGameButtons();
     return;
-  }
+}
   
   // Short commands
   if (text === "ttt") {
@@ -326,4 +383,55 @@ if (gameMode === "rps") {
     }
   
     addMessage("Bot", reply, "left");
+  }
+
+  let rpsScores = { user: 0, bot: 0 }; // Keep track of scores
+
+  function startRPSButtons() {
+    gameMode = "rps";
+    const rpsHTML = `
+      🎮 <b>Rock Paper Scissors!</b><br>
+      <button class="game-btn" onclick="playRPS('rock')">✊ Rock</button>
+      <button class="game-btn" onclick="playRPS('paper')">📄 Paper</button>
+      <button class="game-btn" onclick="playRPS('scissors')">✂️ Scissors</button>
+      <br><br>
+      <button class="game-btn" onclick="resetRPSScores()">🔄 Reset Scores</button>
+      <p>Score: You ${rpsScores.user} - Bot ${rpsScores.bot}</p>
+    `;
+    addCustomMessage("Bot", rpsHTML);
+  }
+  
+  function playRPS(userChoice) {
+    const choices = ["rock", "paper", "scissors"];
+    const botChoice = choices[Math.floor(Math.random() * 3)];
+    let result = "";
+  
+    if (userChoice === botChoice) result = "It's a tie 😐";
+    else if (
+      (userChoice === "rock" && botChoice === "scissors") ||
+      (userChoice === "paper" && botChoice === "rock") ||
+      (userChoice === "scissors" && botChoice === "paper")
+    ) {
+      result = "You win 🎉";
+      rpsScores.user++;
+    } else {
+      result = "I win 😄";
+      rpsScores.bot++;
+    }
+  
+    addMessage(
+      "Bot",
+      `You chose <b>${userChoice}</b><br>I chose <b>${botChoice}</b><br>${result}`,
+      "left"
+    );
+  
+    // Show buttons again for next round, with updated scores
+    startRPSButtons();
+  }
+  
+  function resetRPSScores() {
+    rpsScores.user = 0;
+    rpsScores.bot = 0;
+    addMessage("Bot", "RPS scores have been reset! 🔄", "left");
+    startRPSButtons(); // Show buttons again with reset scores
   }
